@@ -1,0 +1,1 @@
+Automated evidence refresh 2026-09-03 02:05 MSK. Frozen hypothesis, q, gamma, p0, six slots, freeze time, thresholds and stopping rules unchanged.

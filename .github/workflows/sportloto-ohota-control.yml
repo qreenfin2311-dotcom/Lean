@@ -1,0 +1,41 @@
+name: Sportloto 4x20 independent Ohota RNG control
+
+on:
+  push:
+    branches:
+      - "research/sportloto-4x20-audit-20260902"
+    paths:
+      - ".github/workflows/sportloto-ohota-control.yml"
+      - ".research-sportloto/ohota-control-trigger.txt"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  control:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Sparse checkout control script
+        uses: actions/checkout@v4
+        with:
+          ref: research/sportloto-4x20-audit-20260902
+          fetch-depth: 1
+          filter: blob:none
+          sparse-checkout: |
+            .research-sportloto
+      - name: Run official Ohota archive control
+        env:
+          LOTO_OUT: .research-sportloto/out
+        run: python .research-sportloto/ohota_control.py | tee .research-sportloto/ohota-console.json
+      - name: Upload control
+        uses: actions/upload-artifact@v4
+        with:
+          name: sportloto-ohota-rng-control
+          path: |
+            .research-sportloto/out/ohota-control.json
+            .research-sportloto/out/ohota-k.csv
+            .research-sportloto/ohota-console.json
+          retention-days: 14
+          if-no-files-found: error

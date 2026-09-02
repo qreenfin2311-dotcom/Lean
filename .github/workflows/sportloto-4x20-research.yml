@@ -70,6 +70,13 @@ jobs:
         run: |
           python .research-sportloto/sportloto_supplement.py | tee .research-sportloto/supplement-console.json
 
+      - name: Validate lag signal with slot-preserving null and chronological holdout
+        env:
+          LOTO_ARCHIVE: .research-sportloto/draws.json
+          LOTO_OUT: .research-sportloto/out
+        run: |
+          python .research-sportloto/sportloto_lag_validation.py | tee .research-sportloto/lag-validation-console.json
+
       - name: Upload reproducible audit bundle
         uses: actions/upload-artifact@v4
         with:
@@ -78,5 +85,6 @@ jobs:
             .research-sportloto/out/**
             .research-sportloto/out-console.json
             .research-sportloto/supplement-console.json
+            .research-sportloto/lag-validation-console.json
           retention-days: 30
           if-no-files-found: error

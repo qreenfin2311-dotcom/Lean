@@ -25,25 +25,19 @@ jobs:
           filter: blob:none
           sparse-checkout: |
             .research-sportloto
-      - name: Probe official Ohota API schema
-        run: python .research-sportloto/ohota_probe.py | tee .research-sportloto/ohota-probe-console.json
-      - name: Run official Ohota archive control
+      - name: Run recent official Ohota RNG control
         shell: bash
-        env:
-          LOTO_OUT: .research-sportloto/out
         run: |
           set -o pipefail
-          python .research-sportloto/ohota_control.py | tee .research-sportloto/ohota-console.json
+          python .research-sportloto/ohota_control_recent.py | tee .research-sportloto/ohota-recent-console.json
       - name: Upload control
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: sportloto-ohota-rng-control
           path: |
-            .research-sportloto/out/ohota-probe.json
-            .research-sportloto/out/ohota-control.json
-            .research-sportloto/out/ohota-k.csv
-            .research-sportloto/ohota-probe-console.json
-            .research-sportloto/ohota-console.json
+            .research-sportloto/out/ohota-recent-control.json
+            .research-sportloto/out/ohota-recent-k.csv
+            .research-sportloto/ohota-recent-console.json
           retention-days: 14
           if-no-files-found: error

@@ -56,6 +56,20 @@ jobs:
           print('Snapshot verified:', d['count'], d['first'], d['last'], d.get('retrievedAt'))
           PY
 
+      - name: Validate 2025 GSC launch replication and controls
+        env:
+          LOTO_ARCHIVE: .research-sportloto/draws.json
+          LOTO_OUT: .research-sportloto/out
+        run: |
+          python .research-sportloto/gsc_launch_replication.py | tee .research-sportloto/gsc-launch-console.json
+
+      - name: Test schedule changes as leading indicators
+        env:
+          LOTO_ARCHIVE: .research-sportloto/draws.json
+          LOTO_OUT: .research-sportloto/out
+        run: |
+          python .research-sportloto/schedule_transition_audit.py | tee .research-sportloto/schedule-transition-console.json
+
       - name: Probe live official archive head and extend frozen ledger
         continue-on-error: true
         shell: bash
@@ -101,13 +115,6 @@ jobs:
         run: |
           python .research-sportloto/sportloto_lag_validation.py | tee .research-sportloto/lag-validation-console.json
 
-      - name: Test schedule changes as leading indicators
-        env:
-          LOTO_ARCHIVE: .research-sportloto/draws.json
-          LOTO_OUT: .research-sportloto/out
-        run: |
-          python .research-sportloto/schedule_transition_audit.py | tee .research-sportloto/schedule-transition-console.json
-
       - name: Upload reproducible audit bundle
         uses: actions/upload-artifact@v4
         with:
@@ -119,5 +126,6 @@ jobs:
             .research-sportloto/lag-validation-console.json
             .research-sportloto/live-probe-console.json
             .research-sportloto/schedule-transition-console.json
+            .research-sportloto/gsc-launch-console.json
           retention-days: 30
           if-no-files-found: error

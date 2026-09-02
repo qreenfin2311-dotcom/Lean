@@ -1,0 +1,64 @@
+name: Sportloto 4x20 live frozen head
+
+on:
+  push:
+    branches:
+      - "research/sportloto-4x20-audit-20260902"
+    paths:
+      - ".github/workflows/sportloto-live-head.yml"
+      - ".research-sportloto/live-probe-trigger.txt"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  live:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Sparse checkout probe
+        uses: actions/checkout@v4
+        with:
+          ref: research/sportloto-4x20-audit-20260902
+          fetch-depth: 1
+          filter: blob:none
+          sparse-checkout: |
+            .research-sportloto
+      - name: Fetch verified snapshot
+        run: |
+          set -euo pipefail
+          curl -fLsS --retry 4 --retry-delay 2 \
+            https://raw.githubusercontent.com/Jokersochi/Jokersochi/main/public/loto-analytics-4x20/data/draws.json \
+            -o .research-sportloto/draws.json
+      - name: Fetch official live head
+        env:
+          LOTO_ARCHIVE: .research-sportloto/draws.json
+          LOTO_HEAD: .research-sportloto/official-head-raw.json
+          LOTO_OUT: .research-sportloto/out
+        run: |
+          set -euo pipefail
+          curl -fGsS --retry 4 --retry-delay 2 \
+            'https://www.stoloto.ru/p/api/mobile/api/v35/service/draws/archive' \
+            -H 'accept: */*' \
+            -H 'content-type: application/x-www-form-urlencoded' \
+            -H 'device-platform: DESKTOP' \
+            -H 'device-type: STOLOTO' \
+            -H 'gosloto-partner: bXMjXFRXZ3coWXh6R3s1NTdUX3dnWlBMLUxmdg' \
+            -H 'referer: https://www.stoloto.ru/4x20/archive' \
+            -H 'user-agent: Mozilla/5.0 LotoOS-GitHub-Updater/1.0' \
+            --data-urlencode 'game=4x20' \
+            --data-urlencode 'count=50' \
+            --data-urlencode 'page=1' \
+            -o "$LOTO_HEAD"
+          python .research-sportloto/official_head_probe.py | tee .research-sportloto/live-probe-console.json
+      - name: Upload live probe
+        uses: actions/upload-artifact@v4
+        with:
+          name: sportloto-4x20-live-head
+          path: |
+            .research-sportloto/out/live-prospective.json
+            .research-sportloto/out/live-prospective-ledger.csv
+            .research-sportloto/live-probe-console.json
+          retention-days: 7
+          if-no-files-found: error

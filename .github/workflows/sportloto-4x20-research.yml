@@ -12,6 +12,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: sportloto-4x20-research
+  cancel-in-progress: true
+
 jobs:
   audit:
     runs-on: ubuntu-latest
@@ -30,6 +34,9 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+
+      - name: Install numerical dependency
+        run: python -m pip install --quiet numpy
 
       - name: Download latest verified official snapshot
         shell: bash
@@ -56,6 +63,13 @@ jobs:
         run: |
           python .research-sportloto/sportloto_audit.py | tee .research-sportloto/out-console.json
 
+      - name: Run multiplicity and nonlinear supplement
+        env:
+          LOTO_ARCHIVE: .research-sportloto/draws.json
+          LOTO_OUT: .research-sportloto/out
+        run: |
+          python .research-sportloto/sportloto_supplement.py | tee .research-sportloto/supplement-console.json
+
       - name: Upload reproducible audit bundle
         uses: actions/upload-artifact@v4
         with:
@@ -63,5 +77,6 @@ jobs:
           path: |
             .research-sportloto/out/**
             .research-sportloto/out-console.json
+            .research-sportloto/supplement-console.json
           retention-days: 30
           if-no-files-found: error

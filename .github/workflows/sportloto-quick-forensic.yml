@@ -1,0 +1,60 @@
+name: Sportloto quick forensic
+
+on:
+  push:
+    branches:
+      - "research/sportloto-4x20-audit-20260902"
+    paths:
+      - ".research-sportloto/quick_forensic.py"
+      - ".github/workflows/sportloto-quick-forensic.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sportloto-quick-forensic
+  cancel-in-progress: true
+
+jobs:
+  quick:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: research/sportloto-4x20-audit-20260902
+          fetch-depth: 1
+          filter: blob:none
+          sparse-checkout: |
+            .research-sportloto
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Download verified snapshot
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -fL --retry 4 --retry-delay 2 \
+            https://raw.githubusercontent.com/Jokersochi/Jokersochi/main/public/loto-analytics-4x20/data/draws.json \
+            -o .research-sportloto/draws.json
+          python - <<'PY'
+          import json
+          d=json.load(open('.research-sportloto/draws.json'))
+          assert d.get('source')=='official'
+          assert d.get('quality',{}).get('continuous') is True
+          assert not d.get('quality',{}).get('gaps')
+          print(d['count'],d['last'],d.get('retrievedAt'))
+          PY
+      - name: Run quick forensic
+        env:
+          LOTO_ARCHIVE: .research-sportloto/draws.json
+          LOTO_OUT: .research-sportloto/quick-out
+        run: python .research-sportloto/quick_forensic.py | tee .research-sportloto/quick-console.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: sportloto-quick-forensic
+          path: |
+            .research-sportloto/quick-out/**
+            .research-sportloto/quick-console.json
+          retention-days: 7

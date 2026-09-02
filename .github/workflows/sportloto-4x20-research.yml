@@ -100,6 +100,13 @@ jobs:
         run: |
           python .research-sportloto/sportloto_lag_validation.py | tee .research-sportloto/lag-validation-console.json
 
+      - name: Test schedule changes as leading indicators
+        env:
+          LOTO_ARCHIVE: .research-sportloto/draws.json
+          LOTO_OUT: .research-sportloto/out
+        run: |
+          python .research-sportloto/schedule_transition_audit.py | tee .research-sportloto/schedule-transition-console.json
+
       - name: Upload reproducible audit bundle
         uses: actions/upload-artifact@v4
         with:
@@ -110,5 +117,6 @@ jobs:
             .research-sportloto/supplement-console.json
             .research-sportloto/lag-validation-console.json
             .research-sportloto/live-probe-console.json
+            .research-sportloto/schedule-transition-console.json
           retention-days: 30
           if-no-files-found: error

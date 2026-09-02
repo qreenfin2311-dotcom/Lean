@@ -15,7 +15,7 @@ permissions:
 jobs:
   control:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 8
     steps:
       - name: Sparse checkout control script
         uses: actions/checkout@v4
@@ -25,19 +25,18 @@ jobs:
           filter: blob:none
           sparse-checkout: |
             .research-sportloto
-      - name: Run recent official Ohota RNG control
+      - name: Run recent official Ohota 1000-draw control
         shell: bash
         run: |
           set -o pipefail
-          python .research-sportloto/ohota_control_recent.py | tee .research-sportloto/ohota-recent-console.json
+          python .research-sportloto/ohota_control_1000.py | tee .research-sportloto/ohota-1000-console.json
       - name: Upload control
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: sportloto-ohota-rng-control
+          name: sportloto-ohota-rng-control-fast
           path: |
-            .research-sportloto/out/ohota-recent-control.json
-            .research-sportloto/out/ohota-recent-k.csv
-            .research-sportloto/ohota-recent-console.json
+            .research-sportloto/out/ohota-1000-control.json
+            .research-sportloto/ohota-1000-console.json
           retention-days: 14
           if-no-files-found: error

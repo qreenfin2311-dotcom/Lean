@@ -56,6 +56,29 @@ jobs:
           print('Snapshot verified:', d['count'], d['first'], d['last'], d.get('retrievedAt'))
           PY
 
+      - name: Probe live official archive head and extend frozen ledger
+        shell: bash
+        env:
+          LOTO_ARCHIVE: .research-sportloto/draws.json
+          LOTO_HEAD: .research-sportloto/official-head-raw.json
+          LOTO_OUT: .research-sportloto/out
+        run: |
+          set -euo pipefail
+          curl -fGsS --retry 4 --retry-delay 2 \
+            'https://www.stoloto.ru/p/api/mobile/api/v35/service/draws/archive' \
+            -H 'accept: */*' \
+            -H 'content-type: application/x-www-form-urlencoded' \
+            -H 'device-platform: DESKTOP' \
+            -H 'device-type: STOLOTO' \
+            -H 'gosloto-partner: bXMjXFRXZ3coWXh6R3s1NTdUX3dnWlBMLUxmdg' \
+            -H 'referer: https://www.stoloto.ru/4x20/archive' \
+            -H 'user-agent: Mozilla/5.0 LotoOS-GitHub-Updater/1.0' \
+            --data-urlencode 'game=4x20' \
+            --data-urlencode 'count=50' \
+            --data-urlencode 'page=1' \
+            -o "$LOTO_HEAD"
+          python .research-sportloto/official_head_probe.py | tee .research-sportloto/live-probe-console.json
+
       - name: Run frozen ledger and blind walk-forward audit
         env:
           LOTO_ARCHIVE: .research-sportloto/draws.json
@@ -86,5 +109,6 @@ jobs:
             .research-sportloto/out-console.json
             .research-sportloto/supplement-console.json
             .research-sportloto/lag-validation-console.json
+            .research-sportloto/live-probe-console.json
           retention-days: 30
           if-no-files-found: error

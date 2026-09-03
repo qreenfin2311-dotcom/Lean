@@ -6,6 +6,7 @@ on:
       - "research/sportloto-4x20-audit-20260902"
     paths:
       - ".research-sportloto/quick_forensic.py"
+      - ".research-sportloto/gsc_launch_subset_robustness.py"
       - ".github/workflows/sportloto-quick-forensic.yml"
   workflow_dispatch:
 
@@ -46,15 +47,15 @@ jobs:
           assert not d.get('quality',{}).get('gaps')
           print(d['count'],d['last'],d.get('retrievedAt'))
           PY
-      - name: Run quick forensic
+      - name: Run slot-subset robustness
         env:
           LOTO_ARCHIVE: .research-sportloto/draws.json
           LOTO_OUT: .research-sportloto/quick-out
-        run: python .research-sportloto/quick_forensic.py | tee .research-sportloto/quick-console.json
+        run: python .research-sportloto/gsc_launch_subset_robustness.py | tee .research-sportloto/subset-console.json
       - uses: actions/upload-artifact@v4
         with:
           name: sportloto-quick-forensic
           path: |
             .research-sportloto/quick-out/**
-            .research-sportloto/quick-console.json
+            .research-sportloto/subset-console.json
           retention-days: 7

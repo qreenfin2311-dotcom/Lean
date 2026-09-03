@@ -12,7 +12,7 @@ TZ=datetime.fromisoformat('2026-08-26T14:21:00+03:00').tzinfo
 FROZEN_MINUTES=('12:07','13:52','16:07','16:22','20:07','23:22')
 LAUNCH_DATE='2025-10-15'
 LAUNCH_MINUTES=('12:07','16:07','16:22','20:07')
-REPS=100000
+REPS=10000
 SEED=2609030631
 
 
@@ -73,7 +73,6 @@ def main():
             if len(a['ids'])>=10 and len(b['ids'])>=10:
                 events.append(event_record(minute,a,b,rows,50))
 
-    # Event-specific two-sided permutation and familywise max over all observed exact-second transitions.
     rng=random.Random(SEED)
     ge_event=[0]*len(events); ge_max=[0]*len(events)
     obs=[e['absMeanKDiff'] for e in events]
@@ -97,14 +96,12 @@ def main():
         e['familywiseMaxP']=(ge_max[j]+1)/(REPS+1)
         for key in ('preIds','postIds'): e.pop(key,None)
 
-    # Launch: verify the exact second offsets actually present on 2025-10-15 and first 50 launch observations.
     daily_launch=[r for r in rows if r['date']==LAUNCH_DATE and r['minute'] in LAUNCH_MINUTES]
     launch_slots=sorted({r['slot'] for r in daily_launch})
     launch_ids=[r['i'] for r in rows if r['date']>=LAUNCH_DATE and r['minute'] in LAUNCH_MINUTES][:50]
     launch_by_min={m:summary_ids([i for i in launch_ids if rows[i]['minute']==m],rows) for m in LAUNCH_MINUTES}
     launch_by_min_seconds={m:sorted({rows[i]['second'] for i in launch_ids if rows[i]['minute']==m}) for m in LAUNCH_MINUTES}
 
-    # Identify the first 16:07 exact-second transition after launch and relate it to the launch transient.
     e1607=[e for e in events if e['minute']=='16:07' and e['firstNewDateTime']>=LAUNCH_DATE]
     first1607=e1607[0] if e1607 else None
     if first1607:
@@ -112,7 +109,6 @@ def main():
         before_shift=[r['i'] for r in rows if r['date']>=LAUNCH_DATE and r['minute']=='16:07' and r['number']<cut]
         first1607['all16_07FromLaunchBeforeShift']=summary_ids(before_shift,rows)
 
-    # For completeness, summarize exact-second values by frozen minute over full pre-freeze history.
     second_counts={m:{str(s):sum(1 for i in byminute[m] if rows[i]['second']==s) for s in sorted({rows[i]['second'] for i in byminute[m]})} for m in FROZEN_MINUTES}
 
     report={
@@ -134,7 +130,7 @@ def main():
       'interpretation':{
         'confirmatoryStatus':'unchanged; exact seconds are exploratory and frozen inclusion remains minute-level exactly as preregistered',
         'keyQuestion':'Does an externally observable HH:MM:SS scheduler change coincide with a reproducible K regime change?',
-        'multiplicity':'familywiseMaxP controls over all exact-second transitions with >=10 observations on each side among the six frozen minute slots',
+        'multiplicity':f'familywiseMaxP controls over all exact-second transitions with >=10 observations on each side among the six frozen minute slots; {REPS} permutations',
         'manipulationClaim':False
       }
     }

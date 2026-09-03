@@ -1,0 +1,66 @@
+name: Sportloto seconds-offset forensic audit
+
+on:
+  push:
+    branches:
+      - "research/sportloto-4x20-audit-20260902"
+    paths:
+      - ".research-sportloto/seconds_offset_audit.py"
+      - ".github/workflows/sportloto-seconds-offset.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sportloto-seconds-offset
+  cancel-in-progress: true
+
+jobs:
+  seconds-offset:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Sparse checkout research files
+        uses: actions/checkout@v4
+        with:
+          ref: research/sportloto-4x20-audit-20260902
+          fetch-depth: 1
+          filter: blob:none
+          sparse-checkout: |
+            .research-sportloto
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Download verified official snapshot
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -fL --retry 4 --retry-delay 2 \
+            https://raw.githubusercontent.com/Jokersochi/Jokersochi/main/public/loto-analytics-4x20/data/draws.json \
+            -o .research-sportloto/draws.json
+          python - <<'PY'
+          import json
+          d=json.load(open('.research-sportloto/draws.json'))
+          assert d.get('source')=='official'
+          assert d.get('quality',{}).get('continuous') is True
+          assert not d.get('quality',{}).get('gaps')
+          assert d.get('count')==len(d.get('draws',[]))
+          print('Snapshot verified:',d['count'],d['first'],d['last'],d.get('retrievedAt'))
+          PY
+      - name: Run seconds-offset audit
+        env:
+          LOTO_ARCHIVE: .research-sportloto/draws.json
+          LOTO_OUT: .research-sportloto/out-seconds
+        run: |
+          python .research-sportloto/seconds_offset_audit.py | tee .research-sportloto/seconds-offset-console.json
+      - name: Upload focused artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sportloto-seconds-offset
+          path: |
+            .research-sportloto/out-seconds/**
+            .research-sportloto/seconds-offset-console.json
+          retention-days: 30
+          if-no-files-found: error

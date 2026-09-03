@@ -1,0 +1,2 @@
+Automation forensic refresh at 2026-09-03 03:05 MSK.
+Purpose: refresh official head, frozen ledger, and historical validation without changing protocol.

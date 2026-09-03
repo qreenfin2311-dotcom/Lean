@@ -77,6 +77,13 @@ jobs:
         run: |
           python .research-sportloto/gsc_launch_subset_robustness.py | tee .research-sportloto/gsc-launch-subset-console.json
 
+      - name: Test timestamp-second alignment at GSC launch
+        env:
+          LOTO_ARCHIVE: .research-sportloto/draws.json
+          LOTO_OUT: .research-sportloto/out
+        run: |
+          python .research-sportloto/seconds_offset_audit.py | tee .research-sportloto/seconds-offset-console.json
+
       - name: Compare REPULSION number-identity fingerprints
         env:
           LOTO_ARCHIVE: .research-sportloto/draws.json
@@ -150,6 +157,7 @@ jobs:
             .research-sportloto/gsc-launch-console.json
             .research-sportloto/gsc-launch-multiplicity-console.json
             .research-sportloto/gsc-launch-subset-console.json
+            .research-sportloto/seconds-offset-console.json
             .research-sportloto/repulsion-fingerprint-console.json
           retention-days: 30
           if-no-files-found: error
